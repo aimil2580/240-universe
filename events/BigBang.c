@@ -70,8 +70,6 @@ void EventGalaxyCreation(int gid) {
         Galaxies[galaxyPtr].oclusters[i].cid=INT_MAX;
         Galaxies[galaxyPtr].oclusters[i].orphans =NULL;
     }
-
-
     galaxyPtr++;
     printf("G %d\n",gid);
     printf("Galaxies = ");
@@ -80,10 +78,25 @@ void EventGalaxyCreation(int gid) {
 }
 
 
+//EVENT J PRINT GALAXY
+void EventPrintGalaxy(int gid) {
+    int p=0;
+    while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+    if (p==galaxyPtr) return;
+    // to move p to the right spot In Galaxies Table;
+    printf("J %d\n",gid);
+    printf("  Solars =\n");
+
+}
+
+
+
 
 int main() {
     EventBigBang();
     EventGalaxyCreation(67);
     EventGalaxyCreation(9898);
+    EventGalaxyCreation(123);
+    EventPrintGalaxy(123);
     return 0;
 }
