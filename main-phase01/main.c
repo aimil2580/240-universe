@@ -61,6 +61,8 @@ struct planet {
 
 galaxy_t Galaxies[GALAXIES_CAP_N];
 
+static int galaxyPtr;
+
 // Helper functions go here
 
 void EventBigBang();
@@ -81,10 +83,40 @@ void EventPrintUniverse(void);
 void EventBigBang() {
   DebugPrint("B\n");
   // TODO: Student Implementation
+  for (int i=0; i<GALAXIES_CAP_N; i++) {
+    Galaxies[i].gid = INT_MAX;
+    Galaxies[i].solars = NULL;
+    Galaxies[i].ssentinel =NULL;
+    for (int j=0;j<OCLUSTERS_CAP_M;j++) {
+      Galaxies[i].oclusters[j].cid =INT_MAX;
+      Galaxies[i].oclusters[j].orphans =NULL;
+    }
+  }
+
+  galaxyPtr=0;
+  printf("B DONE\n");
 }
 void EventGalaxyCreation(int gid) {
   DebugPrint("G %d\n", gid);
   // TODO: Student Implementation
+  if (galaxyPtr >=GALAXIES_CAP_N) return;
+  Galaxies[galaxyPtr].gid = gid;
+  solar_t* sentinel = (solar_t*) malloc(sizeof(solar_t));
+  sentinel->planets =NULL;
+  sentinel->sid = -1;
+  sentinel->next = sentinel;
+  Galaxies[galaxyPtr].ssentinel = sentinel;
+  Galaxies[galaxyPtr].solars=sentinel;
+
+  for (int i=0;i<OCLUSTERS_CAP_M;i++) {
+    Galaxies[galaxyPtr].oclusters[i].cid=INT_MAX;
+    Galaxies[galaxyPtr].oclusters[i].orphans =NULL;
+  }
+  galaxyPtr++;
+  printf("G %d\n",gid);
+  printf("Galaxies = ");
+  for (int i=0;i<galaxyPtr;i++) printf(" %d ",Galaxies[i].gid);
+  printf("\nDONE\n");
 }
 void EventStarBirth(int sid, int gid) {
   DebugPrint("S %d %d\n", sid, gid);
@@ -129,6 +161,12 @@ void EventPrintOrphanCluster(int cid) {
 void EventPrintGalaxy(int gid) {
   DebugPrint("J %d\n", gid);
   // TODO: Student Implementation
+  int p=0;
+  while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+  if (p==galaxyPtr) return;
+  // to move p to the right spot In Galaxies Table;
+  printf("J %d\n",gid);
+  printf("  Solars =\n");
 }
 void EventPrintUniverse(void) {
   DebugPrint("U\n");
