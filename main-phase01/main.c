@@ -65,6 +65,62 @@ static int galaxyPtr;
 
 // Helper functions go here
 
+
+void SL_Remove(galaxy_t* galaxy , int sid) {
+  if (galaxy ==NULL || galaxy->ssentinel ==NULL) return;
+  solar_t * toBeRemoved = galaxy->solars;
+  solar_t * prevOfDeleted;
+  while (sid != toBeRemoved->sid && toBeRemoved->sid !=-1) {
+    prevOfDeleted =toBeRemoved;
+    toBeRemoved = toBeRemoved ->next;
+  }
+  //ama de to vrei
+  if (toBeRemoved->sid==-1) return;
+
+  //an pao na vgalo to ena poy uparxei
+  if (toBeRemoved->next == galaxy->ssentinel) {
+    toBeRemoved->next =NULL;
+    toBeRemoved->planets=NULL;
+    toBeRemoved->sid =-2;
+    galaxy->solars= galaxy->ssentinel;
+    galaxy->ssentinel->next = NULL;
+  }else {
+    // an otidhpote allo
+    prevOfDeleted->next= toBeRemoved->next;
+    if (toBeRemoved->next == galaxy->ssentinel){
+      galaxy->ssentinel->next = prevOfDeleted;
+    }
+    toBeRemoved->next=NULL;
+    toBeRemoved->planets=NULL;
+    toBeRemoved->sid=-2;
+  }
+}
+solar_t* SL_Search(galaxy_t* galaxy, int sid) {
+  if (galaxy ==NULL || galaxy->ssentinel ==NULL) return NULL;
+  solar_t* toBeFound = galaxy->solars;
+  while (sid != toBeFound->sid && toBeFound->sid !=-1) toBeFound=toBeFound->next;
+  if (toBeFound == galaxy->ssentinel) return NULL;
+  return toBeFound;
+}
+void SL_Insert(galaxy_t* galaxy,int sid) {
+  if (galaxy ==NULL || galaxy->ssentinel ==NULL) return;
+
+  solar_t * newStar = (solar_t *) malloc(sizeof(solar_t));
+  newStar->sid=sid;
+  newStar->planets=NULL;
+
+  if (galaxy->ssentinel->next ==NULL) {
+    newStar->next = galaxy->ssentinel;
+    galaxy->solars= newStar;
+    galaxy->ssentinel->next= newStar;
+  }else {
+    newStar->next = galaxy->ssentinel;
+    galaxy->ssentinel->next->next= newStar;
+    galaxy->ssentinel->next = newStar;
+  }
+}
+
+
 void EventBigBang();
 void EventGalaxyCreation(int gid);
 void EventStarBirth(int sid, int gid);
@@ -79,6 +135,7 @@ void EventPrintSolar(int sid);
 void EventPrintOrphanCluster(int cid);
 void EventPrintGalaxy(int gid);
 void EventPrintUniverse(void);
+
 
 void EventBigBang() {
   DebugPrint("B\n");
@@ -104,7 +161,7 @@ void EventGalaxyCreation(int gid) {
   solar_t* sentinel = (solar_t*) malloc(sizeof(solar_t));
   sentinel->planets =NULL;
   sentinel->sid = -1;
-  sentinel->next = sentinel;
+  sentinel->next = NULL;
   Galaxies[galaxyPtr].ssentinel = sentinel;
   Galaxies[galaxyPtr].solars=sentinel;
 
@@ -121,6 +178,22 @@ void EventGalaxyCreation(int gid) {
 void EventStarBirth(int sid, int gid) {
   DebugPrint("S %d %d\n", sid, gid);
   // TODO: Student Implementation
+  int p=0;
+  while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+  // if (p==galaxyPtr) return;
+  // to move p to the right spot In Galaxies Table;
+  SL_Insert(&Galaxies[p],sid);
+
+  printf("S %d %d \n  Solars = ",sid,gid);
+  for (solar_t* i=Galaxies[p].solars;i->sid!=-1;i=i->next ) {
+    printf("%d",i->sid);
+    if (i->next->sid!=-1) {
+      printf(",");
+    } else {
+      printf("\n");
+    }
+  }
+  printf("DONE\n");
 }
 void EventPlanetCreation(int pid, int distance, int sid) {
   DebugPrint("P %d %d %d\n", pid, distance, sid);
@@ -153,6 +226,19 @@ void EventFindInRange(int pid, int distance) {
 void EventPrintSolar(int sid) {
   DebugPrint("H %d\n", sid);
   // TODO: Student Implementation
+  solar_t * toBePrinted=NULL;
+  int p=0;
+
+  while (p<galaxyPtr && toBePrinted ==NULL) {
+    toBePrinted = SL_Search(&Galaxies[p],sid);
+    p++;
+  }
+
+  if (toBePrinted ==NULL) return;
+
+  printf("H %d \n Planets = \n",sid);
+  if (toBePrinted->planets != NULL) for (planet_t* j = toBePrinted->planets; j != NULL;j=j->next) printf("%d : %d : %d : %d\n", j->pid,j->distance,(j->previous ==NULL ? 0 : j->previous->pid), (j->next ==NULL ? 0 : j->next->pid));
+  printf("DONE\n");
 }
 void EventPrintOrphanCluster(int cid) {
   DebugPrint("I %d\n", cid);
@@ -166,7 +252,12 @@ void EventPrintGalaxy(int gid) {
   if (p==galaxyPtr) return;
   // to move p to the right spot In Galaxies Table;
   printf("J %d\n",gid);
-  printf("  Solars =\n");
+  if (Galaxies[p].solars!=NULL) {
+    for (solar_t* i =Galaxies[p].solars;i->sid!=-1;i=i->next) EventPrintSolar(i->sid);
+  }else {
+
+    printf("DONE\n");
+  }
 }
 void EventPrintUniverse(void) {
   DebugPrint("U\n");

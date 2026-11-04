@@ -85,46 +85,6 @@ void EventBigBang() {
 
 
 
-
-void SL_Insert(galaxy_t* galaxy,int sid) {
-    if (galaxy ==NULL || galaxy->ssentinel ==NULL) return;
-
-    solar_t * newStar = (solar_t *) malloc(sizeof(solar_t));
-    newStar->sid=sid;
-    newStar->planets=NULL;
-
-    if (galaxy->ssentinel->next ==NULL) {
-        newStar->next = galaxy->ssentinel;
-        galaxy->solars= newStar;
-        galaxy->ssentinel->next= newStar;
-    }else {
-        newStar->next = galaxy->ssentinel;
-        galaxy->ssentinel->next->next= newStar;
-        galaxy->ssentinel->next = newStar;
-    }
-}
-
-void EventStarBirth(int sid, int gid) {
-    int p=0;
-    while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
-    // if (p==galaxyPtr) return;
-    // to move p to the right spot In Galaxies Table;
-    SL_Insert(&Galaxies[p],sid);
-
-    printf("S %d %d \n  Solars = ",sid,gid);
-    for (solar_t* i=Galaxies[p].solars;i->sid!=-1;i=i->next ) {
-        printf("%d",i->sid);
-        if (i->next->sid!=-1) {
-            printf(",");
-        } else {
-            printf("\n");
-        }
-    }
-    printf("DONE\n");
-
-}
-
-
 void SL_Remove(galaxy_t* galaxy , int sid) {
     if (galaxy ==NULL || galaxy->ssentinel ==NULL) return;
     solar_t * toBeRemoved = galaxy->solars;
@@ -161,6 +121,46 @@ solar_t* SL_Search(galaxy_t* galaxy, int sid) {
     if (toBeFound == galaxy->ssentinel) return NULL;
     return toBeFound;
 }
+void SL_Insert(galaxy_t* galaxy,int sid) {
+    if (galaxy ==NULL || galaxy->ssentinel ==NULL) return;
+
+    solar_t * newStar = (solar_t *) malloc(sizeof(solar_t));
+    newStar->sid=sid;
+    newStar->planets=NULL;
+
+    if (galaxy->ssentinel->next ==NULL) {
+        newStar->next = galaxy->ssentinel;
+        galaxy->solars= newStar;
+        galaxy->ssentinel->next= newStar;
+    }else {
+        newStar->next = galaxy->ssentinel;
+        galaxy->ssentinel->next->next= newStar;
+        galaxy->ssentinel->next = newStar;
+    }
+}
+
+
+
+
+void EventStarBirth(int sid, int gid) {
+    int p=0;
+    while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+    // if (p==galaxyPtr) return;
+    // to move p to the right spot In Galaxies Table;
+    SL_Insert(&Galaxies[p],sid);
+
+    printf("S %d %d \n  Solars = ",sid,gid);
+    for (solar_t* i=Galaxies[p].solars;i->sid!=-1;i=i->next ) {
+        printf("%d",i->sid);
+        if (i->next->sid!=-1) {
+            printf(",");
+        } else {
+            printf("\n");
+        }
+    }
+    printf("DONE\n");
+
+}
 
 
 
@@ -180,6 +180,19 @@ void EventPrintSolar(int sid) {
     printf("DONE\n");
 }
 
+void EventPrintGalaxy(int gid) {
+    int p=0;
+    while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+    if (p==galaxyPtr) return;
+    // to move p to the right spot In Galaxies Table;
+    printf("J %d\n",gid);
+    if (Galaxies[p].solars!=NULL) {
+        for (solar_t* i =Galaxies[p].solars;i->sid!=-1;i=i->next) EventPrintSolar(i->sid);
+    }else {
+
+    printf("DONE\n");
+    }
+}
 int main() {
     EventBigBang();
     EventGalaxyCreation(122);
@@ -192,7 +205,6 @@ int main() {
     EventStarBirth(1,10);
     EventStarBirth(97,10);
     printf("%p\n",SL_Search(&Galaxies[4],445));
-    EventPrintSolar(2);
 
     planet_t* new1 = (planet_t*) malloc(sizeof(planet_t));
     new1->pid=51;
@@ -211,9 +223,11 @@ int main() {
     new3->previous=new2;
     new3->distance=23;
 
-    Galaxies[4].solars->planets =  new1;
-    EventPrintSolar(2);
+    Galaxies[4].solars->planets =  new1;// sid =2
+    // EventPrintSolar(2);
 
-
+    SL_Remove(&Galaxies[4],51);
+    // EventPrintSolar(2);
+    EventPrintGalaxy(10);
 }
 
