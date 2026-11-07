@@ -120,6 +120,98 @@ void SL_Insert(galaxy_t* galaxy,int sid) {
   }
 }
 
+planet_t* DL_Search(planet_t * head,int pid) {
+  if (head == NULL) return NULL;
+  planet_t * toBeFound = head;
+  int f =0;
+  while (toBeFound!=NULL && toBeFound->pid !=pid) {
+    toBeFound=toBeFound->next;
+  }
+  return toBeFound;
+};
+planet_t * DL_Insert(planet_t* head,int pid,int distance){
+  planet_t* p=head;
+  planet_t* prevOfP = NULL;
+  planet_t* toBeAdded = (planet_t*) malloc(sizeof(planet_t));
+  //init new planet   toBeAdded->pid =pid;
+  toBeAdded->distance =distance;
+  toBeAdded->next =NULL;
+  toBeAdded->previous =NULL;
+  toBeAdded->pid = pid;
+
+  if(p==NULL)return toBeAdded;
+
+  if (distance < head->distance) {
+    toBeAdded->next = head;
+    head->previous = toBeAdded;
+    head->distance = head->distance - distance;
+    return toBeAdded;
+  }
+
+
+  int distSum = 0;
+  while(p!=NULL && (distSum+ p->distance )<=distance){
+    distSum += p->distance;
+    prevOfP = p;
+    p=p->next;
+  }
+  //somewhere in between
+  if(p!=NULL){
+    toBeAdded->next = p;
+    toBeAdded->previous = p->previous;
+    p->previous->next = toBeAdded;
+    p->previous = toBeAdded;
+
+    toBeAdded->distance=distance-distSum;
+    p->distance= p->distance - toBeAdded->distance;
+  } else{
+    //in the end
+    prevOfP ->next = toBeAdded;
+    toBeAdded->previous =  prevOfP;
+    toBeAdded->distance = distance - prevOfP->distance;
+  }
+
+  return head;
+
+}
+planet_t* DL_Remove(planet_t* head,int pid) {
+  if (head ==NULL) return NULL;
+  planet_t* toBeRemoved = DL_Search(head,pid);
+  if (toBeRemoved ==NULL) return NULL;
+
+  //an einai to mono sth lista
+  if (toBeRemoved->previous ==NULL && toBeRemoved->next == NULL) {
+    toBeRemoved->pid=-1;
+    return NULL;
+  }
+
+  //an einai to proto
+  if (toBeRemoved -> previous ==NULL) {
+    toBeRemoved->next->distance = (toBeRemoved->distance)+toBeRemoved->next->distance;
+    toBeRemoved->next->previous=NULL;
+    toBeRemoved->pid=-1;
+    return toBeRemoved->next;
+  }
+
+  //an einai to telefteo
+  if (toBeRemoved->next==NULL) {
+    toBeRemoved->previous->next =NULL;
+    toBeRemoved->pid=-1;
+    return head;
+  }
+
+  //an einai kapoy anamesa
+  if (toBeRemoved->next!=NULL && toBeRemoved->previous!=NULL) {
+    toBeRemoved->pid=-1;
+    toBeRemoved->previous->next= toBeRemoved->next;
+    toBeRemoved->next->previous= toBeRemoved->previous;
+    toBeRemoved->next->distance=toBeRemoved->next->distance+toBeRemoved->distance;
+    return head;
+  }
+}
+
+
+
 
 void EventBigBang();
 void EventGalaxyCreation(int gid);
@@ -198,6 +290,23 @@ void EventStarBirth(int sid, int gid) {
 void EventPlanetCreation(int pid, int distance, int sid) {
   DebugPrint("P %d %d %d\n", pid, distance, sid);
   // TODO: Student Implementation
+
+
+  solar_t* solarForNewPlanet=NULL;
+  for (int i=0;i<galaxyPtr;i++) {
+    solarForNewPlanet = SL_Search(&Galaxies[i],sid);
+    if (solarForNewPlanet!=NULL) break;
+  }
+  // ama de to vrei
+  if (solarForNewPlanet ==NULL) return;
+
+  solarForNewPlanet->planets = DL_Insert(solarForNewPlanet->planets,pid,distance);
+
+  printf("P %d %d %d\n",pid,distance,sid);
+  for (planet_t* i= solarForNewPlanet->planets;i->next != NULL;i= i->next) {
+    printf("%d : %d : %d : %d\n",i->pid,i->distance, i->previous ==NULL ? 0: i->previous->pid, i->next ==NULL ? 0 : i -> next -> pid);
+  }
+  printf("DONE\n");
 }
 void EventStarDeath(int sid, int distance) {
   DebugPrint("D %d %d\n", sid, distance);
