@@ -308,10 +308,69 @@ void EventPlanetCreation(int pid, int distance, int sid) {
   }
   printf("DONE\n");
 }
+
+
+
+planet_t* RemovePlantes(int dist ,solar_t* sl) {
+  if (sl->planets==NULL) return NULL;
+
+  //na mh figei kaneis
+  if (sl->planets->distance > dist) return sl->planets;
+
+  int distSum=0;
+  planet_t* p=sl->planets;
+  while (distSum<dist || sl->planets ==NULL) {
+    distSum+=p->distance;
+
+    //remove first planet and make start be the second
+    sl->planets = DL_Remove(sl->planets,sl->planets->pid);
+  }
+  return sl->planets;
+};
+
+int findBegging(ocluster_t clusters[OCLUSTERS_CAP_M]) {
+  int end =1;
+  for (;end<OCLUSTERS_CAP_M && clusters[end].cid != INT_MAX; end*=2);
+  int start = end/2;
+  while (start<=end) {
+    int mid = (start+end)/2;
+    if (clusters[mid].cid==INT_MAX) {
+      if (clusters[mid-1].cid!=INT_MAX) return mid;
+      end=mid-1;
+    }else {
+      if (clusters[mid+1].cid == INT_MAX) return mid+1;
+      start=mid+1;
+    }
+  }
+  return -1;
+}
+
 void EventStarDeath(int sid, int distance) {
   DebugPrint("D %d %d\n", sid, distance);
   // TODO: Student Implementation
+  solar_t* toBeRemoved = NULL;
+  //gia na bro solar
+  int i=0;
+  for (;i<=galaxyPtr;i++) {
+  toBeRemoved = SL_Search(&Galaxies[i],sid);
+    if (toBeRemoved!=NULL) break;
+  }
+  planet_t* remaningPlanets  =RemovePlantes(distance,toBeRemoved);
+  SL_Remove(&Galaxies[i],sid);
+
+  if (remaningPlanets == NULL) return;
+
+  int j=findBegging(Galaxies[i].oclusters);
+
+  Galaxies[i].oclusters[j].cid = sid;
+  Galaxies[i].oclusters[j].orphans = remaningPlanets;
+
+
+
+
 }
+
+
 void EventPlanetOrphanCrash(int oid, int pid) {
   DebugPrint("O %d %d\n", oid, pid);
   // TODO: Student Implementation
