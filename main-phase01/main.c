@@ -212,108 +212,6 @@ planet_t* DL_Remove(planet_t* head,int pid) {
   }
 }
 
-
-
-
-void EventBigBang();
-void EventGalaxyCreation(int gid);
-void EventStarBirth(int sid, int gid);
-void EventPlanetCreation(int pid, int distance, int sid);
-void EventStarDeath(int sid, int distance);
-void EventPlanetOrphanCrash(int oid, int pid);
-void EventGalaxyMerge(int gid1, int gid2);
-void EventOrphansClusterCrash(int cid1, int cid2, int cid3);
-void EventEndOfWorld(void);
-void EventFindInRange(int pid, int distance);
-void EventPrintSolar(int sid);
-void EventPrintOrphanCluster(int cid);
-void EventPrintGalaxy(int gid);
-void EventPrintUniverse(void);
-
-
-void EventBigBang() {
-  DebugPrint("B\n");
-  // TODO: Student Implementation
-  for (int i=0; i<GALAXIES_CAP_N; i++) {
-    Galaxies[i].gid = INT_MAX;
-    Galaxies[i].solars = NULL;
-    Galaxies[i].ssentinel =NULL;
-    for (int j=0;j<OCLUSTERS_CAP_M;j++) {
-      Galaxies[i].oclusters[j].cid =INT_MAX;
-      Galaxies[i].oclusters[j].orphans =NULL;
-    }
-  }
-
-  galaxyPtr=0;
-  printf("B DONE\n");
-}
-void EventGalaxyCreation(int gid) {
-  DebugPrint("G %d\n", gid);
-  // TODO: Student Implementation
-  if (galaxyPtr >=GALAXIES_CAP_N) return;
-  Galaxies[galaxyPtr].gid = gid;
-  solar_t* sentinel = (solar_t*) malloc(sizeof(solar_t));
-  sentinel->planets =NULL;
-  sentinel->sid = -1;
-  sentinel->next = NULL;
-  Galaxies[galaxyPtr].ssentinel = sentinel;
-  Galaxies[galaxyPtr].solars=sentinel;
-
-  for (int i=0;i<OCLUSTERS_CAP_M;i++) {
-    Galaxies[galaxyPtr].oclusters[i].cid=INT_MAX;
-    Galaxies[galaxyPtr].oclusters[i].orphans =NULL;
-  }
-  galaxyPtr++;
-  printf("G %d\n",gid);
-  printf("Galaxies = ");
-  for (int i=0;i<galaxyPtr;i++) printf(" %d ",Galaxies[i].gid);
-  printf("\nDONE\n");
-}
-void EventStarBirth(int sid, int gid) {
-  DebugPrint("S %d %d\n", sid, gid);
-  // TODO: Student Implementation
-  int p=0;
-  while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
-  if (p==galaxyPtr) return;
-
-  // to move p to the right spot In Galaxies Table;
-  SL_Insert(&Galaxies[p],sid);
-
-  printf("S %d %d \n  Solars = ",sid,gid);
-  for (solar_t* i=Galaxies[p].solars;i->sid!=-1;i=i->next ) {
-    printf("%d",i->sid);
-    if (i->next->sid!=-1) {
-      printf(",");
-    } else {
-      printf("\n");
-    }
-  }
-  printf("DONE\n");
-}
-void EventPlanetCreation(int pid, int distance, int sid) {
-  DebugPrint("P %d %d %d\n", pid, distance, sid);
-  // TODO: Student Implementation
-
-
-  solar_t* solarForNewPlanet=NULL;
-  for (int i=0;i<galaxyPtr;i++) {
-    solarForNewPlanet = SL_Search(&Galaxies[i],sid);
-    if (solarForNewPlanet!=NULL) break;
-  }
-  // ama de to vrei
-  if (solarForNewPlanet ==NULL) return;
-
-  solarForNewPlanet->planets = DL_Insert(solarForNewPlanet->planets,pid,distance);
-
-  printf("P %d %d %d\n",pid,distance,sid);
-  for (planet_t* i= solarForNewPlanet->planets; i!= NULL;i= i->next) {
-    printf("%d : %d : %d : %d\n",i->pid,i->distance, i->previous ==NULL ? 0: i->previous->pid, i->next ==NULL ? 0 : i -> next -> pid);
-  }
-  printf("DONE\n");
-}
-
-
-
 planet_t* RemovePlantes(int dist ,planet_t* head) {
   if (head==NULL) return NULL;
 
@@ -379,6 +277,146 @@ planet_t* srtById(planet_t* head) {
   return newHead;
 }
 
+planet_t * DL_RemoveOrph(planet_t* head,int pid){
+  if(head == NULL || (head->pid != pid && head->next == NULL) )return head;
+
+  planet_t* p = head;
+
+  while (p!=NULL && p->pid!=pid) p=p->next;
+  if(p==NULL) return head;// not found!
+
+
+
+  //an einai to head poy preppei na vgei kai einai mono toy
+  if(p->next == NULL && p==head && p->pid == pid) return NULL;
+
+
+  //telefteo
+  if(p->next==NULL){
+
+    p->previous->next = NULL;
+    p->pid=-1;
+    return head;
+  }
+
+  //proto
+  if(p->previous == NULL ){
+
+    head->next->previous= NULL;
+    head->pid =-1;
+    return head->next;
+  }
+
+  //endiamesa
+  if(p->previous !=NULL && p->next != NULL ){
+    p->next->previous =  p ->previous;
+    p->previous ->next = p->next;
+
+    p->next =NULL;
+    p->previous=NULL;
+    p->pid=-1;
+
+    return head;
+  }
+}
+
+
+void EventBigBang();
+void EventGalaxyCreation(int gid);
+void EventStarBirth(int sid, int gid);
+void EventPlanetCreation(int pid, int distance, int sid);
+void EventStarDeath(int sid, int distance);
+void EventPlanetOrphanCrash(int oid, int pid);
+void EventGalaxyMerge(int gid1, int gid2);
+void EventOrphansClusterCrash(int cid1, int cid2, int cid3);
+void EventEndOfWorld(void);
+void EventFindInRange(int pid, int distance);
+void EventPrintSolar(int sid);
+void EventPrintOrphanCluster(int cid);
+void EventPrintGalaxy(int gid);
+void EventPrintUniverse(void);
+
+
+void EventBigBang() {
+  DebugPrint("B\n");
+  // TODO: Student Implementation
+  for (int i=0; i<GALAXIES_CAP_N; i++) {
+    Galaxies[i].gid = INT_MAX;
+    Galaxies[i].solars = NULL;
+    Galaxies[i].ssentinel =NULL;
+    for (int j=0;j<OCLUSTERS_CAP_M;j++) {
+      Galaxies[i].oclusters[j].cid =INT_MAX;
+      Galaxies[i].oclusters[j].orphans =NULL;
+    }
+  }
+
+  galaxyPtr=0;
+  printf("DONE\n");
+}
+void EventGalaxyCreation(int gid) {
+  DebugPrint("G %d\n", gid);
+  // TODO: Student Implementation
+  if (galaxyPtr >=GALAXIES_CAP_N) return;
+  Galaxies[galaxyPtr].gid = gid;
+  solar_t* sentinel = (solar_t*) malloc(sizeof(solar_t));
+  sentinel->planets =NULL;
+  sentinel->sid = -1;
+  sentinel->next = NULL;
+  Galaxies[galaxyPtr].ssentinel = sentinel;
+  Galaxies[galaxyPtr].solars=sentinel;
+
+  for (int i=0;i<OCLUSTERS_CAP_M;i++) {
+    Galaxies[galaxyPtr].oclusters[i].cid=INT_MAX;
+    Galaxies[galaxyPtr].oclusters[i].orphans =NULL;
+  }
+  galaxyPtr++;
+  printf("G %d\n",gid);
+  printf("Galaxies = ");
+  for (int i=0;i<galaxyPtr;i++) printf(" %d ",Galaxies[i].gid);
+  printf("\nDONE\n");
+}
+void EventStarBirth(int sid, int gid) {
+  DebugPrint("S %d %d\n", sid, gid);
+  // TODO: Student Implementation
+  int p=0;
+  while (p<galaxyPtr && Galaxies[p].gid != gid) p++;
+  if (p==galaxyPtr) return;
+
+  // to move p to the right spot In Galaxies Table;
+  SL_Insert(&Galaxies[p],sid);
+
+  printf("S %d %d \n Solars = ",sid,gid);
+  for (solar_t* i=Galaxies[p].solars;i->sid!=-1;i=i->next ) {
+    printf("%d",i->sid);
+    if (i->next->sid!=-1) {
+      printf(",");
+    } else {
+      printf("\n");
+    }
+  }
+  printf("DONE\n");
+}
+void EventPlanetCreation(int pid, int distance, int sid) {
+  DebugPrint("P %d %d %d\n", pid, distance, sid);
+  // TODO: Student Implementation
+
+
+  solar_t* solarForNewPlanet=NULL;
+  for (int i=0;i<galaxyPtr;i++) {
+    solarForNewPlanet = SL_Search(&Galaxies[i],sid);
+    if (solarForNewPlanet!=NULL) break;
+  }
+  // ama de to vrei
+  if (solarForNewPlanet ==NULL) return;
+
+  solarForNewPlanet->planets = DL_Insert(solarForNewPlanet->planets,pid,distance);
+
+  printf("P %d %d %d\n",pid,distance,sid);
+  for (planet_t* i= solarForNewPlanet->planets; i!= NULL;i= i->next) {
+    printf("%d : %d : %d : %d\n",i->pid,i->distance, i->previous ==NULL ? 0: i->previous->pid, i->next ==NULL ? 0 : i -> next -> pid);
+  }
+  printf("DONE\n");
+}
 void EventStarDeath(int sid, int distance) {
   DebugPrint("D %d %d\n", sid, distance);
   // TODO: Student Implementation
@@ -418,16 +456,51 @@ void EventStarDeath(int sid, int distance) {
   printf("\n OrphansC = ");
   for (int k = 0; k < OCLUSTERS_CAP_M && Galaxies[i].oclusters[k].cid !=INT_MAX; ++k) {
     printf(" %d ",Galaxies[i].oclusters[k].cid);
+    printf(Galaxies[i].oclusters[k].cid != INT_MAX ? "," : "");
   }
-
   printf("\n Orphans = ");
   for (planet_t* pptr=Galaxies[i].oclusters[j].orphans;pptr!=NULL;pptr=pptr->next)pptr->next ==NULL ? printf(" %d ",pptr->pid) : printf(" %d,",pptr->pid);
   printf("\nDONE\n");
 }
-
 void EventPlanetOrphanCrash(int oid, int pid) {
   DebugPrint("O %d %d\n", oid, pid);
   // TODO: Student Implementation
+  planet_t* crashSid=NULL;
+  planet_t* crashOid=NULL;
+
+  solar_t* headSol= NULL;
+  ocluster_t* headClust =NULL;
+
+for (int i=0;i<galaxyPtr;i++) {
+
+    for (solar_t* j =Galaxies[i].solars; j!=Galaxies[i].ssentinel && crashSid ==NULL;j=j->next) {
+      crashSid  = DL_Search(j->planets,pid);
+      headSol = j;
+    }
+
+    for (int k=0;k<OCLUSTERS_CAP_M && crashOid == NULL;k++) {
+      crashOid = DL_Search(Galaxies[i].oclusters[k].orphans,oid);
+      headClust = &Galaxies[i].oclusters[k];
+    }
+    if (crashSid != NULL && crashOid != NULL) break;
+  }
+  if (crashSid == NULL || crashOid ==NULL) return;
+  if (headClust == NULL || headSol == NULL) return;
+
+  headSol->planets = DL_Remove(headSol->planets,pid);
+  headClust->orphans =DL_RemoveOrph(headClust->orphans,oid);
+
+  printf("O %d %d\n",oid ,pid);
+  printf(" Planets = \n");
+  for (planet_t *i = headSol->planets;i!=NULL;i=i->next) printf("  %d : %d : %d : %d\n",i->pid,i->distance, i->previous !=NULL ? i->previous->pid : 0,i->next !=NULL ? i->next->pid : 0 );
+
+  printf(" Orphans = ");
+  for (planet_t *i = headClust->orphans;i!=NULL;i=i->next) i->next!= NULL ? printf(" %d, ",i->pid) : printf(" %d\n",i->pid);
+
+  printf("\nDONE\n");
+
+
+
 }
 void EventGalaxyMerge(int gid1, int gid2) {
   DebugPrint("M %d %d\n", gid1, gid2);
@@ -478,14 +551,14 @@ void EventPrintOrphanCluster(int cid) {
     if (j < OCLUSTERS_CAP_M && Galaxies[i].oclusters[j].cid == cid) break;
   }
     printf("I %d\n",cid);
+    printf("Orphans = \n");
     for (planet_t* t=Galaxies[i].oclusters[j].orphans;t!=NULL;t=t->next) {
-      printf(" %d : %d : %d \n",t->pid, t->previous!=NULL ? t->previous->pid : 0, t->next !=NULL ? t->next->pid: 0);
+      printf("%d : %d : %d \n",t->pid, t->previous!=NULL ? t->previous->pid : 0, t->next !=NULL ? t->next->pid: 0);
     }
     printf("\nDONE\n");
 
 }
-
-  void EventPrintGalaxy(int gid) {
+void EventPrintGalaxy(int gid) {
     DebugPrint("J %d\n", gid);
     // TODO: Student Implementation
     int p=0;
@@ -500,13 +573,13 @@ void EventPrintOrphanCluster(int cid) {
       EventPrintSolar(i->sid);
     }
 
-    printf("\n Orphan planets clusters = ");
+    printf("\nOrphan planets clusters = \n");
     for (int i=0;i<OCLUSTERS_CAP_M && Galaxies[p].oclusters[i].cid != INT_MAX ;i++) {
       EventPrintOrphanCluster(Galaxies[p].oclusters[i].cid);
     }
     printf("\nDONE\n");
   }
-  void EventPrintUniverse(void) {
+void EventPrintUniverse(void) {
     DebugPrint("U\n");
     // TODO: Student Implementation
   }
