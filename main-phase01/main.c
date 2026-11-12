@@ -504,7 +504,47 @@ for (int i=0;i<galaxyPtr;i++) {
 }
 void EventGalaxyMerge(int gid1, int gid2) {
   DebugPrint("M %d %d\n", gid1, gid2);
-  // TODO: Student Implementation
+
+  galaxy_t* gal1=NULL;
+  galaxy_t* gal2=NULL;
+
+  int i=0;
+  int j=0;
+  for(;i<galaxyPtr; i++){
+    if(Galaxies[i].gid == gid1) gal1=&Galaxies[i];
+    if(Galaxies[i].gid == gid2) {
+      gal2=&Galaxies[i];
+      j=i;
+    }
+  }
+
+  if(gal1 ==NULL || gal2==NULL || gal1==gal2) return;
+
+  if(gal2->solars != gal2->ssentinel){
+    if (gal1->solars == gal1->ssentinel)
+    gal1->solars = gal2->solars;
+    gal2->ssentinel->next->next = gal1->ssentinel;
+    gal1->ssentinel->next = gal2->ssentinel->next;
+
+  } else{
+    gal1->ssentinel->next->next = gal2->solars;
+    gal2->ssentinel->next->next = gal1->ssentinel;
+    gal1->ssentinel->next = gal1->ssentinel->next;
+  }
+  gal2->solars=gal2->ssentinel;
+  gal2->ssentinel->next=NULL;
+
+
+  Galaxies[j] =Galaxies[galaxyPtr-1];
+  Galaxies[galaxyPtr-1].gid=INT_MAX;
+  Galaxies[galaxyPtr - 1].solars = NULL;
+  Galaxies[galaxyPtr - 1].ssentinel = NULL;
+  for (int m = 0; m < OCLUSTERS_CAP_M; m++) {
+    Galaxies[galaxyPtr - 1].oclusters[m].cid = INT_MAX;
+    Galaxies[galaxyPtr - 1].oclusters[m].orphans = NULL;
+  }
+
+  galaxyPtr--;
 }
 void EventOrphansClusterCrash(int cid1, int cid2, int cid3) {
   DebugPrint("C %d %d %d\n", cid1, cid2, cid3);
