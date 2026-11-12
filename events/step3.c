@@ -135,7 +135,7 @@ planet_t* DL_Remove(planet_t* head,int pid) {
 };
 
 
-void EventStarDeath(int sid, int distance) {
+void EventStarDeath(int sid, int ) {
   solar_t* toBeRemoved = NULL;
 
   for (int i=0;i<=galaxyPtr;i++) {

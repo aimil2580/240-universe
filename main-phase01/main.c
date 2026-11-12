@@ -211,40 +211,6 @@ planet_t* DL_Remove(planet_t* head,int pid) {
     return head;
   }
 }
-
-planet_t* RemovePlantes(int dist ,planet_t* head) {
-  if (head==NULL) return NULL;
-
-  //na mh figei kaneis
-  if (head->distance > dist) return head;
-
-  int distSum=0;
-  planet_t* p=head;
-  while (head != NULL && head ->distance <=dist) {
-
-    //remove first planet and make start be the second
-
-    //note for debug: otan vgazeis apo thn arxh , to proto tha krataei to smu
-    head= DL_Remove(head,head->pid);
-  }
-  return head;
-};
-
-int findBeginning(ocluster_t clusters[OCLUSTERS_CAP_M]) {
-  int low = 0, high = OCLUSTERS_CAP_M - 1;
-  int result = -1;
-
-  while (low <= high) {
-    int mid = low + (high - low) / 2;
-    if (clusters[mid].cid == INT_MAX) {
-      result = mid;
-      high = mid - 1;
-    } else {
-      low = mid + 1;        }
-  }
-  return result;
-}
-
 planet_t* srtById(planet_t* head) {
   if (head ==NULL) return NULL;
   if (head->next ==NULL) return  head;
@@ -276,7 +242,6 @@ planet_t* srtById(planet_t* head) {
   }
   return newHead;
 }
-
 planet_t * DL_RemoveOrph(planet_t* head,int pid){
   if(head == NULL || (head->pid != pid && head->next == NULL) )return head;
 
@@ -319,6 +284,84 @@ planet_t * DL_RemoveOrph(planet_t* head,int pid){
     return head;
   }
 }
+planet_t* mergeOclust(planet_t* cl1,planet_t* cl2) {
+  if (cl1 == NULL) return cl2;
+  if (cl2 == NULL) return cl1;
+
+  planet_t* i = cl1;
+  planet_t* j =cl2;
+  planet_t* newHead=NULL;
+  planet_t* newPtr =NULL;
+
+  if (i->pid < j ->pid ) {
+    newPtr =i;
+    i=i->next;
+  } else {
+    newPtr=j;
+    j=j->next;
+  }
+
+  newPtr->next =NULL;
+  newPtr->previous=NULL;
+  newHead=newPtr;
+
+  while (i!=NULL && j!=NULL) {
+    if (i->pid < j ->pid ) {
+      newPtr->next = i;
+      newPtr->next->previous = newPtr;
+      i=i->next;
+    } else {
+      newPtr->next = j;
+      newPtr->next->previous = newPtr;
+      j=j->next;
+    }
+    newPtr=newPtr->next;
+  }
+
+  if (i==NULL) {
+    newPtr->next = j;
+    newPtr->next->previous = newPtr;
+  } else if (j==NULL){
+    newPtr->next = i;
+    newPtr->next->previous = newPtr;
+  }
+
+  return newHead;
+};
+planet_t* RemovePlantes(int dist ,planet_t* head) {
+  if (head==NULL) return NULL;
+
+  //na mh figei kaneis
+  if (head->distance > dist) return head;
+
+  int distSum=0;
+  planet_t* p=head;
+  while (head != NULL && head ->distance <=dist) {
+
+    //remove first planet and make start be the second
+
+    //note for debug: otan vgazeis apo thn arxh , to proto tha krataei to smu
+    head= DL_Remove(head,head->pid);
+  }
+  return head;
+};
+
+int findBeginning(ocluster_t clusters[OCLUSTERS_CAP_M]) {
+  int low = 0, high = OCLUSTERS_CAP_M - 1;
+  int result = -1;
+
+  while (low <= high) {
+    int mid = low + (high - low) / 2;
+    if (clusters[mid].cid == INT_MAX) {
+      result = mid;
+      high = mid - 1;
+    } else {
+      low = mid + 1;        }
+  }
+  return result;
+}
+
+
 
 
 void EventBigBang();
@@ -520,20 +563,50 @@ void EventGalaxyMerge(int gid1, int gid2) {
 
   if(gal1 ==NULL || gal2==NULL || gal1==gal2) return;
 
-  if(gal2->solars != gal2->ssentinel){
-    if (gal1->solars == gal1->ssentinel)
-    gal1->solars = gal2->solars;
-    gal2->ssentinel->next->next = gal1->ssentinel;
-    gal1->ssentinel->next = gal2->ssentinel->next;
+  printf("M %d %d\n",gid1,gid2);
+  printf(" Solars1 = ");
+  for (solar_t* tmp=gal1->solars;tmp!=gal1->ssentinel;tmp=tmp->next) tmp->next == gal1->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
+  printf("\n");
+  printf(" OrphansC1 = ");
+  for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal1->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal1->oclusters[tmp].cid) : printf("%d",gal1->oclusters[tmp].cid);
 
-  } else{
-    gal1->ssentinel->next->next = gal2->solars;
-    gal2->ssentinel->next->next = gal1->ssentinel;
-    gal1->ssentinel->next = gal1->ssentinel->next;
+
+  printf("\n");
+  printf(" Solars2 = ");
+  for (solar_t* tmp=gal2->solars;tmp!=gal2->ssentinel;tmp=tmp->next) tmp->next == gal2->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
+  printf("\n");
+  printf(" OrphansC2 = ");
+  for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal2->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal2->oclusters[tmp].cid) : printf("%d",gal2->oclusters[tmp].cid);
+
+  if(gal2->solars != gal2->ssentinel) {
+    if (gal1->solars == gal1->ssentinel) {
+      gal1->solars = gal2->solars;
+      gal2->ssentinel->next->next = gal1->ssentinel;
+      gal1->ssentinel->next = gal2->ssentinel->next;
+    } else {
+      gal1->ssentinel->next->next = gal2->solars;
+      gal2->ssentinel->next->next = gal1->ssentinel;
+      gal1->ssentinel->next = gal2->ssentinel->next;
+    }
   }
   gal2->solars=gal2->ssentinel;
   gal2->ssentinel->next=NULL;
 
+  int m1 =findBeginning(gal1->oclusters);
+  m1 == -1 ? m1= OCLUSTERS_CAP_M : m1;
+  int m2 =findBeginning(gal2->oclusters);
+  m2 == -1 ? m2= OCLUSTERS_CAP_M : m2;
+  int mmin = m1 > m2 ? m2 : m1;
+
+  for (int k=0;k<mmin;k++) {
+    gal1->oclusters[k].orphans = mergeOclust(gal1->oclusters[k].orphans,gal2->oclusters[k].orphans);
+  }
+
+  if (m2>mmin) {
+    for (int k = mmin;k<m2;k++) {
+      gal1->oclusters[k] = gal2->oclusters[k];
+    }
+  }
 
   Galaxies[j] =Galaxies[galaxyPtr-1];
   Galaxies[galaxyPtr-1].gid=INT_MAX;
@@ -543,9 +616,19 @@ void EventGalaxyMerge(int gid1, int gid2) {
     Galaxies[galaxyPtr - 1].oclusters[m].cid = INT_MAX;
     Galaxies[galaxyPtr - 1].oclusters[m].orphans = NULL;
   }
-
   galaxyPtr--;
+
+  printf("\n");
+  printf(" Solars3 = ");
+  for (solar_t* tmp=gal1->solars;tmp!=gal1->ssentinel;tmp=tmp->next) tmp->next == gal1->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
+  printf("\n");
+  printf(" OrphansC3 = ");
+  for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal1->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal1->oclusters[tmp].cid) : printf("%d",gal1->oclusters[tmp].cid);
+  printf("\nDONE\n");
+
+
 }
+
 void EventOrphansClusterCrash(int cid1, int cid2, int cid3) {
   DebugPrint("C %d %d %d\n", cid1, cid2, cid3);
   // TODO: Student Implementation
