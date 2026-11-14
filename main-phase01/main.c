@@ -541,9 +541,6 @@ for (int i=0;i<galaxyPtr;i++) {
   for (planet_t *i = headClust->orphans;i!=NULL;i=i->next) i->next!= NULL ? printf(" %d, ",i->pid) : printf(" %d\n",i->pid);
 
   printf("\nDONE\n");
-
-
-
 }
 void EventGalaxyMerge(int gid1, int gid2) {
   DebugPrint("M %d %d\n", gid1, gid2);
@@ -625,8 +622,6 @@ void EventGalaxyMerge(int gid1, int gid2) {
   printf(" OrphansC3 = ");
   for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal1->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal1->oclusters[tmp].cid) : printf("%d",gal1->oclusters[tmp].cid);
   printf("\nDONE\n");
-
-
 }
 
 void EventOrphansClusterCrash(int cid1, int cid2, int cid3) {
@@ -691,8 +686,6 @@ void EventPrintSolar(int sid) {
   printf("H %d \n Planets = \n",sid);
   if (toBePrinted->planets != NULL) for (planet_t* j = toBePrinted->planets; j != NULL;j=j->next)
     printf("%d : %d : %d : %d\n", j->pid,j->distance,(j->previous ==NULL ? 0 : j->previous->pid), (j->next ==NULL ? 0 : j->next->pid));
-
-
   printf("DONE\n");
 }
 void EventPrintOrphanCluster(int cid) {
@@ -739,6 +732,11 @@ void EventPrintGalaxy(int gid) {
 void EventPrintUniverse(void) {
     DebugPrint("U\n");
     // TODO: Student Implementation
+  printf("U\n");
+  for (int i=0;i<galaxyPtr;i++) {
+    EventPrintGalaxy(Galaxies[i].gid);
+  }
+  printf("DONE\n");
   }
 
   /*** Parsing Utilities ***/
