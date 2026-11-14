@@ -125,7 +125,6 @@ void SL_Insert(galaxy_t* galaxy,int sid) {
 planet_t* DL_Search(planet_t * head,int pid) {
   if (head == NULL) return NULL;
   planet_t * toBeFound = head;
-  int f =0;
   while (toBeFound!=NULL && toBeFound->pid !=pid) {
     toBeFound=toBeFound->next;
   }
@@ -283,6 +282,34 @@ planet_t * DL_RemoveOrph(planet_t* head,int pid){
 
     return head;
   }
+}
+planet_t * DL_InsOrph(planet_t* head,planet_t* toAdd) {
+  if (toAdd==NULL) return head;
+
+  toAdd->next=NULL;
+  toAdd->previous=NULL;
+  toAdd->distance=0;
+
+  if (head==NULL || toAdd->pid < head->pid) {
+    toAdd->next=head;
+    if (head !=NULL) {
+      head->previous=toAdd;
+    }
+    return toAdd;
+  }
+
+  planet_t* p = head;
+  while (p->next != NULL && p->next->pid < toAdd->pid) {
+    p = p->next;
+  }
+
+  toAdd->next =p->next;
+  toAdd->previous =p;
+  if (p->next !=NULL) {
+    p->next->previous =toAdd;
+  }
+  p->next=toAdd;
+  return head;
 }
 planet_t* mergeOclust(planet_t* cl1,planet_t* cl2) {
   if (cl1 == NULL) return cl2;
@@ -488,7 +515,7 @@ void EventStarDeath(int sid, int distance) {
 
 
   printf("D %d %d\n",sid,distance);
-  printf(" Solars = ");
+  printf("Solars = ");
 
   solar_t *sptr=Galaxies[i].solars;
   while (sptr!=Galaxies[i].ssentinel) {
@@ -496,12 +523,12 @@ void EventStarDeath(int sid, int distance) {
     sptr=sptr->next;
     }
 
-  printf("\n OrphansC = ");
+  printf("\nOrphansC = ");
   for (int k = 0; k < OCLUSTERS_CAP_M && Galaxies[i].oclusters[k].cid !=INT_MAX; ++k) {
     printf(" %d ",Galaxies[i].oclusters[k].cid);
     printf(Galaxies[i].oclusters[k].cid != INT_MAX ? "," : "");
   }
-  printf("\n Orphans = ");
+  printf("\nOrphans = ");
   for (planet_t* pptr=Galaxies[i].oclusters[j].orphans;pptr!=NULL;pptr=pptr->next)pptr->next ==NULL ? printf(" %d ",pptr->pid) : printf(" %d,",pptr->pid);
   printf("\nDONE\n");
 }
@@ -534,10 +561,10 @@ for (int i=0;i<galaxyPtr;i++) {
   headClust->orphans =DL_RemoveOrph(headClust->orphans,oid);
 
   printf("O %d %d\n",oid ,pid);
-  printf(" Planets = \n");
-  for (planet_t *i = headSol->planets;i!=NULL;i=i->next) printf("  %d : %d : %d : %d\n",i->pid,i->distance, i->previous !=NULL ? i->previous->pid : 0,i->next !=NULL ? i->next->pid : 0 );
+  printf("Planets = \n");
+  for (planet_t *i = headSol->planets;i!=NULL;i=i->next) printf(" %d : %d : %d : %d\n",i->pid,i->distance, i->previous !=NULL ? i->previous->pid : 0,i->next !=NULL ? i->next->pid : 0 );
 
-  printf(" Orphans = ");
+  printf("Orphans = ");
   for (planet_t *i = headClust->orphans;i!=NULL;i=i->next) i->next!= NULL ? printf(" %d, ",i->pid) : printf(" %d\n",i->pid);
 
   printf("\nDONE\n");
@@ -561,18 +588,18 @@ void EventGalaxyMerge(int gid1, int gid2) {
   if(gal1 ==NULL || gal2==NULL || gal1==gal2) return;
 
   printf("M %d %d\n",gid1,gid2);
-  printf(" Solars1 = ");
+  printf("Solars1 = ");
   for (solar_t* tmp=gal1->solars;tmp!=gal1->ssentinel;tmp=tmp->next) tmp->next == gal1->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
   printf("\n");
-  printf(" OrphansC1 = ");
+  printf("OrphansC1 = ");
   for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal1->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal1->oclusters[tmp].cid) : printf("%d",gal1->oclusters[tmp].cid);
 
 
   printf("\n");
-  printf(" Solars2 = ");
+  printf("Solars2 = ");
   for (solar_t* tmp=gal2->solars;tmp!=gal2->ssentinel;tmp=tmp->next) tmp->next == gal2->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
   printf("\n");
-  printf(" OrphansC2 = ");
+  printf("OrphansC2 = ");
   for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal2->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal2->oclusters[tmp].cid) : printf("%d",gal2->oclusters[tmp].cid);
 
   if(gal2->solars != gal2->ssentinel) {
@@ -616,10 +643,10 @@ void EventGalaxyMerge(int gid1, int gid2) {
   galaxyPtr--;
 
   printf("\n");
-  printf(" Solars3 = ");
+  printf("Solars3 = ");
   for (solar_t* tmp=gal1->solars;tmp!=gal1->ssentinel;tmp=tmp->next) tmp->next == gal1->ssentinel ? printf(" %d",tmp->sid) : printf(" %d,",tmp->sid);
   printf("\n");
-  printf(" OrphansC3 = ");
+  printf("OrphansC3 = ");
   for (int tmp=0;tmp<OCLUSTERS_CAP_M && gal1->oclusters[tmp].cid!=INT_MAX;tmp++) tmp > 0 ? printf(", %d ",gal1->oclusters[tmp].cid) : printf("%d",gal1->oclusters[tmp].cid);
   printf("\nDONE\n");
 }
@@ -627,6 +654,60 @@ void EventGalaxyMerge(int gid1, int gid2) {
 void EventOrphansClusterCrash(int cid1, int cid2, int cid3) {
   DebugPrint("C %d %d %d\n", cid1, cid2, cid3);
   // TODO: Student Implementation
+  ocluster_t* toBeCrashed=NULL;
+  int i=0;
+  int j=0;
+  for (;i<galaxyPtr;i++) {
+    for (;j<OCLUSTERS_CAP_M && Galaxies[i].oclusters[j].cid!=INT_MAX;j++) {
+      if (toBeCrashed!=NULL) break;
+      if (Galaxies[i].oclusters[j].cid == cid1) toBeCrashed = &Galaxies[i].oclusters[j];
+    }
+    if (toBeCrashed!=NULL) break;
+  }
+  if (toBeCrashed==NULL) return;
+
+  planet_t* head1=NULL;
+  planet_t* head2=NULL;
+
+  printf("C %d %d %d\n",cid1,cid2,cid3);
+  printf("Orphans = ");
+  for (planet_t* ptr=toBeCrashed->orphans;ptr!=NULL;ptr=ptr->next) {
+    printf("%d",ptr->pid);
+    if (ptr->next != NULL) printf(", ");
+  }
+  printf("\n");
+
+  planet_t* ptr = toBeCrashed->orphans;
+  while (ptr!=NULL){
+  planet_t* tmp=ptr->next;
+
+    if (ptr->pid %2 == 0) {
+      head1 = DL_InsOrph(head1,ptr);
+    } else {
+      head2 = DL_InsOrph(head2,ptr);
+    }
+    ptr=tmp;
+  }
+  toBeCrashed->cid =cid2;
+  toBeCrashed->orphans = head1;
+
+  int pos=0;
+  pos = findBeginning(Galaxies[i].oclusters);
+  if (pos==OCLUSTERS_CAP_M) return;
+  Galaxies[i].oclusters[pos].cid=cid3;
+  Galaxies[i].oclusters[pos].orphans = head2;
+
+
+  printf("OrphansC = \n");
+  for (int k =0;k<OCLUSTERS_CAP_M && Galaxies[i].oclusters[k].cid !=INT_MAX;k++) {
+    printf("%d = ",Galaxies[i].oclusters[k].cid);
+    for (planet_t*p = Galaxies[i].oclusters[k].orphans; p!=NULL; p= p->next) {
+      printf("%d",p->pid);
+      if (p->next !=NULL) printf(", ");
+    }
+    printf("\n");
+  }
+printf("DONE\n");
 }
 void EventEndOfWorld(void) {
   DebugPrint("E\n");
