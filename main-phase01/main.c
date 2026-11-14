@@ -640,6 +640,40 @@ void EventEndOfWorld(void) {
 void EventFindInRange(int pid, int distance) {
   DebugPrint("F %d %d\n", pid, distance);
   // TODO: Student Implementation
+  planet_t* mainPlanet= NULL;
+  for (int i =0 ; i<galaxyPtr;i++) {
+      for (solar_t* p=Galaxies[i].solars;p!=Galaxies[i].ssentinel;p=p->next) {
+        if (mainPlanet!=NULL) break;
+        mainPlanet = DL_Search(p->planets,pid);
+
+      }
+    if (mainPlanet!=NULL) break;
+  }
+
+  if (mainPlanet == NULL) return;
+
+  planet_t * L =mainPlanet;
+  planet_t * R = mainPlanet ;
+
+  long sl = 0;
+  long sr = 0;
+
+  for (;L->previous!=NULL && sl+(L->distance)<=distance;L=L->previous) {
+    sl+=L->distance;
+  }
+  for (;R->next!=NULL && sr + (R->next-> distance) <=distance;R=R->next) {
+    sr+= R->next->distance;
+  }
+
+
+  printf("F %d %d\n",pid,distance);
+  for (;L!=R;L=L->next) {
+    printf("%d : %d : %d : %d \n",L->pid,L->distance,L->previous != NULL ? L->previous->pid : 0,L->next != NULL ? L->next->pid : 0);
+  }
+  if (R!=NULL) printf("%d : %d : %d : %d \n",R->pid,R->distance,R->previous != NULL ? R->previous->pid : 0,R->next != NULL ? R->next->pid : 0);
+
+  printf("DONE\n");
+
 }
 void EventPrintSolar(int sid) {
   DebugPrint("H %d\n", sid);
