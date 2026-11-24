@@ -129,7 +129,7 @@ planet_t* DL_Search(planet_t * head,int pid) {
     toBeFound=toBeFound->next;
   }
   return toBeFound;
-};
+}
 planet_t * DL_Insert(planet_t* head,int pid,int distance){
   planet_t* p=head;
   planet_t* prevOfP = NULL;
@@ -209,6 +209,7 @@ planet_t* DL_Remove(planet_t* head,int pid) {
     toBeRemoved->next->distance=toBeRemoved->next->distance+toBeRemoved->distance;
     return head;
   }
+  return head;
 }
 planet_t* srtById(planet_t* head) {
   if (head ==NULL) return NULL;
@@ -282,6 +283,7 @@ planet_t * DL_RemoveOrph(planet_t* head,int pid){
 
     return head;
   }
+  return head;
 }
 planet_t * DL_InsOrph(planet_t* head,planet_t* toAdd) {
   if (toAdd==NULL) return head;
@@ -354,15 +356,12 @@ planet_t* mergeOclust(planet_t* cl1,planet_t* cl2) {
   }
 
   return newHead;
-};
+}
 planet_t* RemovePlantes(int dist ,planet_t* head) {
   if (head==NULL) return NULL;
 
   //na mh figei kaneis
   if (head->distance > dist) return head;
-
-  int distSum=0;
-  planet_t* p=head;
   while (head != NULL && head ->distance <=dist) {
 
     //remove first planet and make start be the second
@@ -371,7 +370,7 @@ planet_t* RemovePlantes(int dist ,planet_t* head) {
     head= DL_Remove(head,head->pid);
   }
   return head;
-};
+}
 
 int findBeginning(ocluster_t clusters[OCLUSTERS_CAP_M]) {
   int low = 0, high = OCLUSTERS_CAP_M - 1;
@@ -383,7 +382,8 @@ int findBeginning(ocluster_t clusters[OCLUSTERS_CAP_M]) {
       result = mid;
       high = mid - 1;
     } else {
-      low = mid + 1;        }
+      low = mid + 1;
+    }
   }
   return result;
 }
